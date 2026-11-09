@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Indexing API Batch Submitter</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #10b981;
+      --error: #ef4444;
+      --warn: #f59e0b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2.5rem 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(to right, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1.75rem;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.25rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+
+    .radio-group {
+      display: flex;
+      gap: 1.25rem;
+      background: #0f172a;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+    }
+
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .radio-item input[type="radio"] {
+      accent-color: var(--primary);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 0.85rem;
+      font-size: 0.9rem;
+      font-family: monospace;
+      line-height: 1.5;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .hint {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-top: 0.35rem;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    button {
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0.85rem 1.75rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: opacity 0.2s, transform 0.1s;
+      width: 100%;
+    }
+
+    button:hover:not(:disabled) {
+      opacity: 0.95;
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .progress-bar-container {
+      display: none;
+      margin-top: 1.5rem;
+      background: #0f172a;
+      border-radius: 9999px;
+      height: 10px;
+      overflow: hidden;
+      border: 1px solid var(--card-border);
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #38bdf8, #10b981);
+      transition: width 0.3s ease;
+    }
+
+    .stats {
+      display: none;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+
+    .stat-box {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-top: 0.25rem;
+    }
+
+    .status-results {
+      margin-top: 1.5rem;
+      display: none;
+    }
+
+    .results-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-top: 0.75rem;
+    }
+
+    .results-table th, .results-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .results-table th {
+      background: #0f172a;
+      color: var(--text-muted);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+    }
+
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border: 1px solid var(--card-border);
+      border-radius: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .badge-error {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .badge-pending {
+      background: rgba(245, 158, 11, 0.2);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.4);
+    }
+
+    .url-cell {
+      word-break: break-all;
+      max-width: 450px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Google Indexing API Batch Tool</h1>
+      <p>Submit bulk URL update or delete notifications directly via your Google Service Account</p>
+    </header>
+
+    <div class="card">
+      <form id="indexingForm">
+        <div class="form-group">
+          <label>Notification Action</label>
+          <div class="radio-group">
+            <label class="radio-item">
+              <input type="radio" name="actionType" value="URL_UPDATED" checked />
+              <span>Update URL (URL_UPDATED)</span>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="actionType" value="URL_DELETED" />
+              <span>Delete URL (URL_DELETED)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="urls">URLs (One URL per line)</label>
+          <textarea id="urls" placeholder="https://example.com/page1&#10;https://example.com/page2&#10;https://example.com/page3" required></textarea>
+          <div class="hint">
+            <span>Enter valid HTTP/HTTPS URLs</span>
+            <span id="lineCount">0 URLs detected</span>
+          </div>
+        </div>
+
+        <button type="submit" id="submitBtn">
+          <span>Send Batch Request</span>
+        </button>
+      </form>
+
+      <div class="progress-bar-container" id="progressContainer">
+        <div class="progress-bar" id="progressBar"></div>
+      </div>
+
+      <div class="stats" id="statsContainer">
+        <div class="stat-box">
+          <div class="stat-label">Total</div>
+          <div class="stat-value" id="statTotal">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Success</div>
+          <div class="stat-value" style="color: var(--success);" id="statSuccess">0</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Failed</div>
+          <div class="stat-value" style="color: var(--error);" id="statFailed">0</div>
+        </div>
+      </div>
+
+      <div class="status-results" id="resultsContainer">
+        <h3 style="font-size: 1rem; margin-bottom: 0.75rem; font-weight: 600;">Execution Log</h3>
+        <div class="table-container">
+          <table class="results-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">#</th>
+                <th>URL</th>
+                <th style="width: 120px;">Status</th>
+                <th>Response / Error Message</th>
+              </tr>
+            </thead>
+            <tbody id="resultsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const textarea = document.getElementById('urls');
+    const lineCount = document.getElementById('lineCount');
+    const form = document.getElementById('indexingForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const progressBar = document.getElementById('progressBar');
+    const statsContainer = document.getElementById('statsContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const resultsBody = document.getElementById('resultsBody');
+
+    const statTotal = document.getElementById('statTotal');
+    const statSuccess = document.getElementById('statSuccess');
+    const statFailed = document.getElementById('statFailed');
+
+    function updateLineCount() {
+      const urls = getCleanUrls();
+      lineCount.textContent = `${urls.length} URL${urls.length === 1 ? '' : 's'} detected`;
+    }
+
+    textarea.addEventListener('input', updateLineCount);
+
+    function getCleanUrls() {
+      return textarea.value
+        .split('\n')
+        .map(u => u.trim())
+        .filter(u => u.length > 0 && /^https?:\/\//i.test(u));
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const urls = getCleanUrls();
+
+      if (urls.length === 0) {
+        alert('Please enter at least one valid URL starting with http:// or https://');
+        return;
+      }
+
+      const actionType = document.querySelector('input[name="actionType"]:checked').value;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span>Processing batch requests...</span>';
+      progressContainer.style.display = 'block';
+      progressBar.style.width = '0%';
+      statsContainer.style.display = 'grid';
+      resultsContainer.style.display = 'block';
+      resultsBody.innerHTML = '';
+
+      statTotal.textContent = urls.length;
+      statSuccess.textContent = '0';
+      statFailed.textContent = '0';
+
+      urls.forEach((url, index) => {
+        const tr = document.createElement('tr');
+        tr.id = `row-${index}`;
+        tr.innerHTML = `
+          <td>${index + 1}</td>
+          <td class="url-cell">${escapeHtml(url)}</td>
+          <td><span class="badge badge-pending">Queued</span></td>
+          <td class="msg-cell">-</td>
+        `;
+        resultsBody.appendChild(tr);
+      });
+
+      let successCount = 0;
+      let failedCount = 0;
+
+      // Process in controlled batches/concurrency of 3
+      const concurrency = 3;
+      let currentIndex = 0;
+
+      async function worker() {
+        while (currentIndex < urls.length) {
+          const idx = currentIndex++;
+          const url = urls[idx];
+          const row = document.getElementById(`row-${idx}`);
+          const statusCell = row.children[2];
+          const msgCell = row.children[3];
+
+          statusCell.innerHTML = '<span class="badge badge-pending">Sending...</span>';
+
+          try {
+            const res = await fetch('/api/notify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url, type: actionType })
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+              successCount++;
+              statSuccess.textContent = successCount;
+              statusCell.innerHTML = '<span class="badge badge-success">Success</span>';
+              msgCell.textContent = data.data && data.data.urlNotificationMetadata 
+                ? `Notified at ${data.data.urlNotificationMetadata.latestUpdate?.notifyTime || 'OK'}`
+                : 'Success 200 OK';
+            } else {
+              failedCount++;
+              statFailed.textContent = failedCount;
+              statusCell.innerHTML = '<span class="badge badge-error">Failed</span>';
+              msgCell.textContent = data.error || (data.data?.error?.message) || 'Unknown error';
+            }
+          } catch (err) {
+            failedCount++;
+            statFailed.textContent = failedCount;
+            statusCell.innerHTML = '<span class="badge badge-error">Error</span>';
+            msgCell.textContent = err.message;
+          }
+
+          const processed = successCount + failedCount;
+          progressBar.style.width = `${Math.round((processed / urls.length) * 100)}%`;
+        }
+      }
+
+      const workers = [];
+      for (let i = 0; i < Math.min(concurrency, urls.length); i++) {
+        workers.push(worker());
+      }
+
+      await Promise.all(workers);
+
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<span>Send Batch Request</span>';
+    });
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
+
